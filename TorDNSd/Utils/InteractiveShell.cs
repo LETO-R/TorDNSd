@@ -154,7 +154,12 @@ namespace TorDNSd.Utils
 
                         Input = string.Empty;
                         CursorPosition = 0;
-                        Console.CursorTop++;
+
+                        if (Environment.OSVersion.Platform != PlatformID.Unix && Environment.OSVersion.Platform != PlatformID.MacOSX)
+                        {
+                            Console.CursorTop++;
+                        }
+
                         Console.CursorLeft = 0;
                         oldInput = string.Empty;
 
@@ -233,12 +238,19 @@ namespace TorDNSd.Utils
 
         public void WriteLine(string line, params string[] args)
         {
+            line = string.Format(line, args);
+
+            if (Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX)
+            {
+                line = line.Replace("\t", "        ");
+            }
+
             var currentInput = Input;
             Input = string.Empty;
             Render(currentInput);
 
             Console.CursorLeft = 0;
-            Console.WriteLine(line.PadRight(InputPrefix.Length), args);
+            Console.WriteLine(line.PadRight(InputPrefix.Length));
 
             Input = currentInput;
             Render(string.Empty);
