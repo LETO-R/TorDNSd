@@ -258,7 +258,7 @@ namespace TorDNSd.Utils
 
         public void WriteLine()
         {
-            Console.WriteLine(string.Empty);
+            WriteLine(string.Empty);
         }
 
         public void Halt()
