@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.ServiceProcess;
 using System.Threading;
 using TorDNSd.Logging;
 using TorDNSd.Utils;
@@ -34,11 +33,6 @@ namespace TorDNSd
         /// Default config file name. Will be looked for @ current working dir if no config file was specified.
         /// </summary>
         public static string DefaultConfigFile = "tordnsd.conf";
-
-        /// <summary>
-        /// After initialization it contains the list of valid configuration options.
-        /// </summary>
-        public static List<string> ValidSettings;
 
         /// <summary>
         /// After initialization it contains the list of valid program options.
@@ -74,9 +68,9 @@ namespace TorDNSd
             // Ran from console
             TorDNS = new TorDNS();
 
-            IEnumerable<string> configFiles =
+            string[] configFiles =
                 args.Where(a => a.StartsWith("--config=", StringComparison.InvariantCultureIgnoreCase)).Select(
-                    a => a.Substring(9));
+                    a => a.Substring(9)).ToArray();
 
             // If no config files were specified, add 'tordnsd.conf' as the default
             if (configFiles.Count() == 0)
@@ -101,7 +95,12 @@ namespace TorDNSd
             }
 
             // Then add the other values
-            foreach (var setting in args.Where(a => ValidSettings.Any(s => a.StartsWith("--" + s + "=", StringComparison.InvariantCultureIgnoreCase))))
+            foreach (var setting in args.Where(a => Options.Single.Select(o => o.Key).Any(s => a.StartsWith("--" + s + "=", StringComparison.InvariantCultureIgnoreCase))))
+            {
+                TorDNS.Configuration.Append(setting);
+            }
+
+            foreach (var setting in args.Where(a => Options.Multi.Select(o => o.Key).Any(s => a.StartsWith("--" + s + "=", StringComparison.InvariantCultureIgnoreCase))))
             {
                 TorDNS.Configuration.Append(setting);
             }
@@ -156,7 +155,7 @@ namespace TorDNSd
 
             Logger.OnLog -= OnLog;
 
-            (new TorDNSShell()).Run();
+            (new Shell.InteractiveShell()).Run();
         }
 
         private static void OnLog(LogSeverity arg1, string arg2)
@@ -179,31 +178,6 @@ namespace TorDNSd
         {
             // Catch unhandled exceptions
             AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
-
-            // Create the list of valid configuration options (will be prefixed with --)
-            ValidSettings = new List<string>();
-
-            ValidSettings.Add("server-bindip");
-            ValidSettings.Add("server-enabled");
-
-            ValidSettings.Add("socks-ip");
-            ValidSettings.Add("socks-port");
-            ValidSettings.Add("socks-enabled");
-
-            ValidSettings.Add("dns-direct");
-            ValidSettings.Add("dns-direct-timeout");
-            ValidSettings.Add("dns-proxy");
-            ValidSettings.Add("dns-proxy-timeout");
-            ValidSettings.Add("dns-cache-enabled");
-            ValidSettings.Add("dns-cache-ttl");
-            ValidSettings.Add("dns-cache-size");
-
-            ValidSettings.Add("filter-proxy");
-            ValidSettings.Add("filter-skip-proxy");
-            ValidSettings.Add("filter-reject");
-
-            ValidSettings.Add("remap");
-            ValidSettings.Add("remap-ttl");
 
             // Create the list of valid program options
             ValidOptions = new List<string>();
@@ -238,9 +212,12 @@ namespace TorDNSd
             {
                 if (!ValidOptions.Any(o => (o.EndsWith("=") && arg.StartsWith(o, StringComparison.InvariantCultureIgnoreCase)) || arg.Equals(o, StringComparison.InvariantCultureIgnoreCase)))
                 {
-                    if (!ValidSettings.Any(o => arg.StartsWith("--" + o, StringComparison.InvariantCultureIgnoreCase)))
+                    if (!Options.Single.Select(o => o.Key).Any(o => arg.StartsWith("--" + o, StringComparison.InvariantCultureIgnoreCase)))
                     {
-                        invalidArguments.Add(arg);
+                        if (!Options.Multi.Select(o => o.Key).Any(o => arg.StartsWith("--" + o, StringComparison.InvariantCultureIgnoreCase)))
+                        {
+                            invalidArguments.Add(arg);
+                        }
                     }
                 }
             }
@@ -278,10 +255,17 @@ namespace TorDNSd
             Console.WriteLine("Program settings specified as an argument will be added last.");
             Console.WriteLine();
 
-            foreach (var setting in ValidSettings)
+            var tordnsSettings = new List<string>();
+            
+            tordnsSettings.AddRange(Options.Single.Select(o => o.Key));
+            tordnsSettings.AddRange(Options.Multi.Select(o => o.Key));
+            tordnsSettings.Sort();
+
+            foreach (var setting in tordnsSettings)
             {
                 Console.WriteLine("--{0}=<value>", setting);
             }
+
             Console.WriteLine();
         }
 

@@ -43,9 +43,6 @@
     <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ARSoft.Tools.Net">
-      <HintPath>..\Libraries\ARSoft.Tools.Net\ARSoft.Tools.Net.dll</HintPath>
-    </Reference>
     <Reference Include="Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>C:\Program Files\Mono-2.6.7\lib\mono\2.0\Mono.Posix.dll</HintPath>
@@ -61,38 +58,34 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Cache\CacheEntry.cs" />
+    <Compile Include="Cache\Extensions\DnsQuestionEx.cs" />
     <Compile Include="Logging\Logger.cs" />
     <Compile Include="Logging\LogSeverity.cs" />
+    <Compile Include="Options.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Shell\InteractiveShell.cs" />
     <Compile Include="TorDNS.cs" />
-    <Compile Include="TorDNSdService.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="TorDNSdService.Designer.cs">
-      <DependentUpon>TorDNSdService.cs</DependentUpon>
-    </Compile>
-    <Compile Include="TorDNSdServiceInstaller.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="TorDNSdServiceInstaller.Designer.cs">
-      <DependentUpon>TorDNSdServiceInstaller.cs</DependentUpon>
-    </Compile>
-    <Compile Include="TorDNSShell.cs" />
+    <Compile Include="TorDNSConfiguration.cs" />
     <Compile Include="Utils\ConfigCollection.cs" />
     <Compile Include="Utils\ConfigEntry.cs" />
     <Compile Include="Utils\Glob.cs" />
-    <Compile Include="Utils\InteractiveShell.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="TorDNSdServiceInstaller.resx">
-      <DependentUpon>TorDNSdServiceInstaller.cs</DependentUpon>
-    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <None Include="tordnsd.conf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Modules\ARSoft.Tools.Net\ARSoft.Tools.Net\ARSoft.Tools.Net.csproj">
+      <Project>{65BFA748-C640-49B0-B506-34BBB165233A}</Project>
+      <Name>ARSoft.Tools.Net</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Modules\InteractiveShell\InteractiveShell\InteractiveShell.csproj">
+      <Project>{3AB41DE8-F305-4414-8FCD-E4F8FAFDEE19}</Project>
+      <Name>InteractiveShell</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

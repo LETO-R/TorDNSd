@@ -3,23 +3,36 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TorDNSd", "TorDNSd\TorDNSd.csproj", "{EB56C9C9-81A1-44ED-857B-D41233FEB3B7}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Modules", "Modules", "{7777FCD4-B84C-4560-937E-0B73E0448102}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InteractiveShell", "Modules\InteractiveShell\InteractiveShell\InteractiveShell.csproj", "{3AB41DE8-F305-4414-8FCD-E4F8FAFDEE19}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ARSoft.Tools.Net", "Modules\ARSoft.Tools.Net\ARSoft.Tools.Net\ARSoft.Tools.Net.csproj", "{65BFA748-C640-49B0-B506-34BBB165233A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
-		Debug|x86 = Debug|x86
 		Release|Any CPU = Release|Any CPU
-		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{EB56C9C9-81A1-44ED-857B-D41233FEB3B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{EB56C9C9-81A1-44ED-857B-D41233FEB3B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EB56C9C9-81A1-44ED-857B-D41233FEB3B7}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{EB56C9C9-81A1-44ED-857B-D41233FEB3B7}.Debug|x86.Build.0 = Debug|Any CPU
 		{EB56C9C9-81A1-44ED-857B-D41233FEB3B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EB56C9C9-81A1-44ED-857B-D41233FEB3B7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{EB56C9C9-81A1-44ED-857B-D41233FEB3B7}.Release|x86.ActiveCfg = Release|Any CPU
+		{3AB41DE8-F305-4414-8FCD-E4F8FAFDEE19}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3AB41DE8-F305-4414-8FCD-E4F8FAFDEE19}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3AB41DE8-F305-4414-8FCD-E4F8FAFDEE19}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3AB41DE8-F305-4414-8FCD-E4F8FAFDEE19}.Release|Any CPU.Build.0 = Release|Any CPU
+		{65BFA748-C640-49B0-B506-34BBB165233A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{65BFA748-C640-49B0-B506-34BBB165233A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{65BFA748-C640-49B0-B506-34BBB165233A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{65BFA748-C640-49B0-B506-34BBB165233A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{3AB41DE8-F305-4414-8FCD-E4F8FAFDEE19} = {7777FCD4-B84C-4560-937E-0B73E0448102}
+		{65BFA748-C640-49B0-B506-34BBB165233A} = {7777FCD4-B84C-4560-937E-0B73E0448102}
 	EndGlobalSection
 EndGlobal

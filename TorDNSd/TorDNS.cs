@@ -3,99 +3,53 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading;
 using ARSoft.Tools.Net.Dns;
+using TorDNSd.Cache;
+using TorDNSd.Cache.Extensions;
 using TorDNSd.Logging;
 using TorDNSd.Utils;
 
 namespace TorDNSd
 {
+    /// <summary>
+    /// TorDNS core.
+    /// </summary>
     public sealed class TorDNS
     {
         private DnsServer _dnsServer;
         private DnsSocksClient _dnsSocksClient;
         private DnsClient _dnsClient;
+        private List<CacheEntry> _dnsCache = new List<CacheEntry>();
 
-        public readonly ConfigCollection Configuration = new ConfigCollection();
+        /// <summary>
+        /// Current active configuration.
+        /// </summary>
+        public TorDNSConfiguration Configuration { get; private set; }
 
-        #region Configuration Wrappers
-        public IPAddress ServerBindIP
-        {
-            get { return Configuration.GetValue("server-bindip", "127.0.0.1").GetValue(IPAddress.Parse("127.0.0.1")); }
-        }
-
-        public bool ServerEnabled
-        {
-            get { return Configuration.GetValue("server-enabled", "false").GetValue(false); }
-        }
-
-        public bool SocksEnabled
-        {
-            get { return Configuration.GetValue("socks-enabled", "false").GetValue(true); }
-        }
-
-        public IPAddress SocksIP
-        {
-            get { return Configuration.GetValue("server-bindip", "127.0.0.1").GetValue(IPAddress.Parse("127.0.0.1")); }
-        }
-
-        public short SocksPort
-        {
-            get { return Configuration.GetValue("socks-port", "9050").GetValue((short)9050); }
-        }
-
-        public int DnsProxyTimeout
-        {
-            get { return Configuration.GetValue("dns-proxy-timeout", "10000").GetValue(10000); }
-        }
-
-        public int DnsDirectTimeout
-        {
-            get { return Configuration.GetValue("dns-direct-timeout", "10000").GetValue(10000); }
-        }
-
-        public List<IPAddress> DnsProxy
-        {
-            get
-            {
-                var result =
-                    Configuration.GetValues("dns-proxy").Where(p => p.GetValue((IPAddress)null) != null).Select(
-                        p => p.GetValue((IPAddress)null)).ToList();
-
-                if (result.Count == 0)
-                {
-                    // Add defaults
-                    result.Add(IPAddress.Parse("8.8.8.8")); // Primary Public Google DNS
-                    result.Add(IPAddress.Parse("8.8.4.4")); // Secondary Public Google DNS
-                }
-
-                return result;
-            }
-        }
-
-        public List<IPAddress> DnsDirect
-        {
-            get
-            {
-                var result =
-                    Configuration.GetValues("dns-direct").Where(p => p.GetValue((IPAddress)null) != null).Select(
-                        p => p.GetValue((IPAddress)null)).ToList();
-
-                if (result.Count == 0)
-                {
-                    // Add defaults
-                    result.Add(IPAddress.Parse("8.8.8.8")); // Primary Public Google DNS
-                    result.Add(IPAddress.Parse("8.8.4.4")); // Secondary Public Google DNS
-                }
-
-                return result;
-            }
-        }
-        #endregion
-
-
+        /// <summary>
+        /// Next configuration. Used when the configuration is reloaded (using Reload())
+        /// </summary>
+        public TorDNSConfiguration NextConfiguration { get; private set; }
+        
+        /// <summary>
+        /// Is TorDNS running.
+        /// </summary>
         public bool IsRunning { get; private set; }
 
+        /// <summary>
+        /// Construct a new TorDNS instance.
+        /// </summary>
+        public TorDNS()
+        {
+            Configuration = new TorDNSConfiguration();
+            NextConfiguration = new TorDNSConfiguration();
+        }
+
+        /// <summary>
+        /// Attempt to start the server.
+        /// </summary>
+        /// <remarks>Will only start when 'start-enabled' is true.</remarks>
+        /// <returns>True on success, false if the server is not enabled.</returns>
         public bool Start()
         {
             if (_dnsServer != null)
@@ -103,16 +57,16 @@ namespace TorDNSd
                 throw new Exception("The server is already running.");
             }
 
-            if (!ServerEnabled)
+            if (!Configuration.ServerEnabled)
             {
                 // Server not enabled
                 return false;
             }
 
-            _dnsServer = new DnsServer(ServerBindIP, 32, 32, OnQuery);
-            Logger.Log(LogSeverity.Info, "Starting the TorDNS server. Bind IP: {0}", ServerBindIP.ToString());
+            _dnsServer = new DnsServer(Configuration.ServerBindIP, 32, 32, OnQuery);
+            Logger.Log(LogSeverity.Info, "Starting the TorDNS server. Bind IP: {0}", Configuration.ServerBindIP.ToString());
 
-            Refresh(true);
+            RefreshConfiguration(true);
 
             _dnsServer.Start();
 
@@ -139,35 +93,35 @@ namespace TorDNSd
             }
         }
 
-        public void Refresh(bool skipServerCheck)
+        public void RefreshConfiguration(bool skipServerCheck)
         {
-            _dnsClient = new DnsClient(DnsDirect, DnsDirectTimeout);
-            _dnsSocksClient = !SocksEnabled ? null : new DnsSocksClient(SocksIP, SocksPort, DnsProxy, DnsProxyTimeout);
+            _dnsClient = new DnsClient(Configuration.DnsDirect.ToList(), Configuration.DnsDirectTimeout);
+            _dnsSocksClient = !Configuration.SocksEnabled ? null : new DnsSocksClient(Configuration.SocksIP, Configuration.SocksPort, Configuration.DnsProxy.ToList(), Configuration.DnsProxyTimeout);
 
             if (!skipServerCheck)
             {
-                if (ServerEnabled && !IsRunning)
+                if (Configuration.ServerEnabled && !IsRunning)
                 {
                     Start();
                 }
 
-                if (!ServerEnabled && IsRunning)
+                if (!Configuration.ServerEnabled && IsRunning)
                 {
                     Stop();
                 }
             }
         }
 
-        public void Refresh()
+        public void RefreshConfiguration()
         {
-            Refresh(false);
+            RefreshConfiguration(false);
         }
 
         private DnsMessageBase OnQuery(DnsMessageBase message, IPAddress clientaddress, ProtocolType protocoltype)
         {
             message.IsQuery = false;
 
-            if (!ServerEnabled)
+            if (!Configuration.ServerEnabled)
             {
                 Logger.Log(LogSeverity.Warning, "Received a DNS request while the server is not enabled.");
 
@@ -175,7 +129,7 @@ namespace TorDNSd
                 return message;
             }
 
-            DnsMessage query = message as DnsMessage;
+            var query = message as DnsMessage;
 
             if (query != null && query.Questions.Count == 1)
             {
@@ -183,7 +137,50 @@ namespace TorDNSd
                 DnsQuestion question = query.Questions[0];
 
                 // Apply all filters on the question
-                FilterResult filterResult = ApplyFilters(question);
+                FilterAction filterResult = ApplyFilters(question);
+
+                // Only check the cache when we do not need to auto-reject
+                if (filterResult != FilterAction.Reject)
+                {
+                    DnsRecordBase[] remappedRecords = ApplyRemaps(question);
+
+                    if (remappedRecords.Length > 0)
+                    {
+                        query.AnswerRecords.AddRange(remappedRecords);
+                        query.ReturnCode = ReturnCode.NoError;
+
+                        return query;
+                    }
+
+                    if (Configuration.DnsCacheEnabled)
+                    {
+                        lock (_dnsCache)
+                        {
+                            // Check the cache
+                            CacheEntry cachedEntry = _dnsCache.FirstOrDefault(c => c.Question.IsEqualTo(question));
+
+                            if (cachedEntry != null)
+                            { 
+                                // Cache hit!
+                                if (Configuration.DnsCacheTtl > 0 && DateTime.UtcNow - cachedEntry.LastHit > new TimeSpan(0, 0, 0, Configuration.DnsCacheTtl))
+                                {
+                                    // Hit expired
+                                    _dnsCache.Remove(cachedEntry);
+                                }
+                                else
+                                { 
+                                    // Hit did not expire, use it.
+                                    cachedEntry.Hit();
+
+                                    query.AnswerRecords.AddRange(cachedEntry.Records);
+                                    query.ReturnCode = ReturnCode.NoError;
+
+                                    return query;
+                                }
+                            }
+                        }
+                    }
+                }
 
                 Logger.Log(LogSeverity.Debug, "QUERY: {0} CLASS: {1} TYPE: {2} FILTER: {3}", question.Name, question.RecordClass.ToString(), question.RecordType.ToString(), filterResult.ToString());
                 
@@ -191,7 +188,7 @@ namespace TorDNSd
 
                 switch (filterResult)
                 {
-                    case FilterResult.Proxy:
+                    case FilterAction.Proxy:
                         if (_dnsSocksClient == null)
                         {
                             // Socks not enabled
@@ -202,7 +199,7 @@ namespace TorDNSd
                         answer = _dnsSocksClient.Resolve(question.Name, question.RecordType, question.RecordClass);
                         break;
 
-                    case FilterResult.SkipProxy:
+                    case FilterAction.SkipProxy:
                         if (_dnsClient == null)
                         {
                             // Socks not enabled
@@ -214,7 +211,7 @@ namespace TorDNSd
 
                         break;
 
-                    case FilterResult.Reject:
+                    case FilterAction.Reject:
                         message.ReturnCode = ReturnCode.ServerFailure;
                         return message;
                 }
@@ -232,6 +229,30 @@ namespace TorDNSd
                     }
 
                     query.ReturnCode = ReturnCode.NoError;
+
+                    if (Configuration.DnsCacheEnabled)
+                    {
+                        lock (_dnsCache)
+                        {
+                            if (!_dnsCache.Any(c => c.Question.IsEqualTo(question)))
+                            {
+                                var cacheEntry = new CacheEntry(question, query.AnswerRecords.ToArray(), Configuration.DnsCacheTtl);
+                                cacheEntry.Hit();
+                                
+                                _dnsCache.Add(cacheEntry);
+
+                                // Check if the cache is full
+                                if (Configuration.DnsCacheSize > 0 && _dnsCache.Count > Configuration.DnsCacheSize)
+                                {
+                                    // Remove the oldest entry
+                                    _dnsCache.Remove(_dnsCache.OrderBy(c => c.LastHit).First());
+                                }
+
+                                Logger.Log(LogSeverity.Debug, "DNS reply cached.");
+                            }
+                        }
+                    }
+
                     return query;
                 }
             }
@@ -241,10 +262,68 @@ namespace TorDNSd
             return message;
         }
 
-        private FilterResult ApplyFilters(DnsQuestion question)
+        private DnsRecordBase[] ApplyRemaps(DnsQuestion question)
+        {
+            var records = new List<DnsRecordBase>();
+
+            foreach (var entry in Configuration.Where(c => c.Key.Equals("remap", StringComparison.InvariantCultureIgnoreCase)))
+            {
+                // FORMAT: <filter> <class> <type> <value>
+                string[] parts = entry.Value.Split(new[] {' '}, 4);
+
+                if (parts.Length != 4)
+                {
+                    // Invalid rule
+                    continue;
+                }
+
+                string remapFilter = parts[0];
+                string remapClass = parts[1];
+                string remapType = parts[2];
+                string remapValue = parts[3];
+
+                // See if we got a match
+                if (Glob.Match(question.Name, remapFilter)
+                    && (question.RecordClass == RecordClass.Any || (question.RecordClass.ToString().Equals(remapClass, StringComparison.InvariantCultureIgnoreCase)))
+                    && (question.RecordType == RecordType.Any || (question.RecordType.ToString().Equals(remapType, StringComparison.InvariantCultureIgnoreCase))))
+                {
+                    IPAddress ipaddress = null;
+
+                    switch (remapType.ToUpper())
+                    {
+                        case "A":
+                            if (!IPAddress.TryParse(remapValue, out ipaddress))
+                            {
+                                // Invalid argument
+                                continue;
+                            }
+
+                            records.Add(new ARecord(question.Name, Configuration.RemapTtl, ipaddress));
+                            break;
+                        case "MX":
+                            ushort priority = 0;
+
+                            if (remapValue.Contains(" "))
+                            {
+                                ushort.TryParse(remapValue.Split(' ')[0], out priority);
+                            }
+
+                            records.Add(new MxRecord(question.Name, Configuration.RemapTtl, priority, remapValue.Split(' ')[0]));
+                            break;
+                        case "NS":
+                            records.Add(new NsRecord(question.Name, Configuration.RemapTtl, remapValue.Trim()));
+                            break;
+                    }
+                }
+            }
+
+            return records.ToArray();
+        }
+
+        private FilterAction ApplyFilters(DnsQuestion question)
         {
             // Default : Proxy
-            FilterResult result = FilterResult.Proxy;
+            FilterAction result = FilterAction.Proxy;
             
             foreach (var entry in Configuration.Where(c => c.Key.StartsWith("filter-", StringComparison.InvariantCultureIgnoreCase)))
             {
@@ -253,21 +332,21 @@ namespace TorDNSd
                     case "filter-proxy":
                         if (Glob.Match(question.Name, entry.Value ))
                         {
-                            result = FilterResult.Proxy;
+                            result = FilterAction.Proxy;
                         }
                         break;
 
                     case "filter-reject":
                         if (Glob.Match(question.Name, entry.Value))
                         {
-                            result = FilterResult.Reject;
+                            result = FilterAction.Reject;
                         }
                         break;
 
                     case "filter-skip-proxy":
                         if (Glob.Match(question.Name, entry.Value))
                         {
-                            result = FilterResult.SkipProxy;
+                            result = FilterAction.SkipProxy;
                         }
                         break;
                 }
@@ -276,11 +355,22 @@ namespace TorDNSd
             return result;
         }
 
-        private enum FilterResult
+        private enum FilterAction
         {
             Reject,
             Proxy,
             SkipProxy
+        }
+
+        /// <summary>
+        /// Clear the DNS cache.
+        /// </summary>
+        public void ClearCache()
+        {
+            lock (_dnsCache)
+            {
+                _dnsCache.Clear();
+            }
         }
     }
 }
