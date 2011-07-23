@@ -1,7 +1,0 @@
-[submodule "Modules/InteractiveShell"]
-	path = Modules/InteractiveShell
-	url = git@github.com:LETO-R/InteractiveShell.git
-[submodule "Modules/ARSoft.Tools.Net"]
-	path = Modules/ARSoft.Tools.Net
-	url = git@github.com:LETO-R/ARSoft.Tools.Net.git
-	
