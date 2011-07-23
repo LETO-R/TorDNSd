@@ -1,0 +1,3 @@
+[submodule "Modules/InteractiveShell"]
+	path = Modules/InteractiveShell
+	url = git://github.com/LETO-R/InteractiveShell.git
