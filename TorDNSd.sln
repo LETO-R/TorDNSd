@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InteractiveShell", "Modules
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ARSoft.Tools.Net", "Modules\ARSoft.Tools.Net\ARSoft.Tools.Net\ARSoft.Tools.Net.csproj", "{65BFA748-C640-49B0-B506-34BBB165233A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TorDNSd-Shell", "TorDNSd-Shell\TorDNSd-Shell.csproj", "{F7FBA84F-B83D-4ABA-A48A-5F8360054F8E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{65BFA748-C640-49B0-B506-34BBB165233A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{65BFA748-C640-49B0-B506-34BBB165233A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{65BFA748-C640-49B0-B506-34BBB165233A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F7FBA84F-B83D-4ABA-A48A-5F8360054F8E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F7FBA84F-B83D-4ABA-A48A-5F8360054F8E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F7FBA84F-B83D-4ABA-A48A-5F8360054F8E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F7FBA84F-B83D-4ABA-A48A-5F8360054F8E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -34,5 +40,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{3AB41DE8-F305-4414-8FCD-E4F8FAFDEE19} = {7777FCD4-B84C-4560-937E-0B73E0448102}
 		{65BFA748-C640-49B0-B506-34BBB165233A} = {7777FCD4-B84C-4560-937E-0B73E0448102}
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = TorDNSd\TorDNSd.csproj
 	EndGlobalSection
 EndGlobal

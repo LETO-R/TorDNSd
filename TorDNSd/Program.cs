@@ -13,7 +13,7 @@ namespace TorDNSd
         public static bool InQuietMode;
         public static bool InVerboseMode;
         public static bool InInteractiveMode;
-
+        
         /// <summary>
         /// Program name.
         /// </summary>
@@ -48,7 +48,7 @@ namespace TorDNSd
         /// Program point of entry.
         /// </summary>
         /// <param name="args">Supplied arguments.</param>
-        private static void Main(string[] args)
+        public static void Main(string[] args)
         {
             // Initialize the program
             Initialize();
@@ -59,6 +59,19 @@ namespace TorDNSd
                 return;
             }
 
+            // We need elevated privileges on non-windows systems to bind on port 53
+            // You can specify the --no-root option to skip this check though.
+            if (!OS.IsWindows && !OS.IsElevated && !args.Contains("--no-root", StringComparer.InvariantCultureIgnoreCase))
+            {
+                Console.WriteLine(">>> FATAL ERROR : NO ELEVATED PRIVILEGES <<<");
+                Console.WriteLine("You need to run tordnsd with elevated privileges (as root)");
+                Console.WriteLine("This is needed to bind the tordnsd server on port 53");
+                Console.WriteLine("Use --no-root to disable this check.");
+                Console.WriteLine();
+                return;
+            }
+
+            // When not in quiet mode, register the log handler
             if (!InQuietMode)
             {
                 // Not in quiet mode, enable logging
@@ -193,6 +206,10 @@ namespace TorDNSd
             ValidOptions.Add("-h");
             ValidOptions.Add("--help");
             ValidOptions.Add("--config=");
+
+            // Misc
+
+            ValidOptions.Add("--no-root");
         }
 
         /// <summary>
